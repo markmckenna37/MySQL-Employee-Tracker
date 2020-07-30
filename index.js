@@ -1,5 +1,8 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
+const {
+    get
+} = require("http");
 
 const connection = mysql.createConnection({
     host: "localhost",
@@ -11,54 +14,56 @@ const connection = mysql.createConnection({
 
 
 
-function userPrompt() {
-    inquirer.prompt({
+async function userPrompt() {
+    return inquirer.prompt({
         type: "list",
         message: "What would you like to do?",
-        choices: ["Add departments", "Add roles", "Add employees", "View departments", "View roles", "View employees", "Update employee roles", "Exit"],
+        choices: [
+            "Add departments",
+            "Add roles",
+            "Add employees",
+            "View departments",
+            "View roles",
+            "View employees",
+            "Update employee roles",
+            "Exit"
+        ],
         name: "choices"
-    }).then(({
-        choices
-    }) => {
-        switch (choices) {
-            case "Add departments":
-                addDepartment();
-                break;
-            case "Add roles":
-                addRoles();
-                break;
-            case "Add employees":
-                addEmployees()
-                break;
-            case "View departments":
-                console.log("got my");
-                break;
-            case "View roles":
-                console.log("filler texst");
-                break;
-            case "View employees":
-                console.log(" to text");
-                break;
-            case "Update employee roles":
-                console.log("efwahuio");
-                break;
-            default:
-                console.log("K BYE");
-                return false
-        }
-
-    });
+    })
 };
-async function obtainDepartmentId (departmentName) {
-    const query = `SELECT * FROM department WHERE department.name = ?`;
-    const args = [departmentName];
-    const rows = await connection.query(query, args);
-    console.log(rows[0].id);
 
+
+
+async function getDepartmentNames () {
+    await connection.query("SELECT name FROM departments", (err, data) => {
+        if (err) throw err
+        let departments = [];
+        for (const row of data) {
+            departments.push(row.name)
+        }
+        return departments;
+    });
 }
-
-const addDepartment = () => {
-    inquirer.prompt([{
+async function getEmployeeNames() {
+    const rows = await connection.query("SELECT * FROM employees");
+    let names = [];
+    for (const employee of rows) {
+        names.push(employees.first_name + employees.lastname);
+    }
+    console.log(names)
+    return names;
+}
+async function getRoles() {
+    const rows = await connection.query("SELECT title FROM roles");
+    let roles = [];
+    for (const roles of rows) {
+        roles.push(roles);
+    }
+    console.log(roles)
+    return roles;
+}
+const addDepartment = async () => {
+    await inquirer.prompt([{
         name: "name",
         message: "What is the name of the department you want to add?"
     }]).then(({
@@ -66,27 +71,21 @@ const addDepartment = () => {
         name
     }) => {
         connection.query("INSERT INTO departments SET ?", {
-            id: id,
-            name: name
-        },
-        (err, result) => {
-            if (err) throw err;
-            console.log(`Added ${name} to company departments`);
-            obtainDepartmentId();
-        }
+                id: id,
+                name: name
+            },
+            (err, result) => {
+                if (err) throw err;
+                console.log(`Added ${name} to company departments`);
+                obtainDepartmentId();
+            }
         )
-    }
-    )
-}
-const addRoles = () => {
-    connection.query("SELECT name FROM departments", function(err, data, fields) {
-    (err, result) => {
-        if (err) throw err;
-        console.table(result);
-      }
     })
-    inquirer.prompt([
-        {
+}
+const addRoles = async (addRole) => {
+    // const departments = await getDepartmentNames();
+    // console.log(departments)
+    await inquirer.prompt([{
             name: "title",
             message: "What is the title of the role you want to add?"
 
@@ -99,61 +98,60 @@ const addRoles = () => {
             type: "list",
             name: "department",
             message: "What department do you want to add your role to?",
-            choices: ["1", "2", "3"]
+            choices: [...addRole]
         }
 
     ])
 }
 
-const addEmployees = () => {
-    inquirer.prompt([
-        {
-        name: "firstName",
-        message: "What is the employee's first name?"
+const addEmployees = async () => {
+    await inquirer.prompt([{
+            name: "firstName",
+            message: "What is the employee's first name?"
         },
         {
-        name: "lastName",
-        message: "What is the employee's first name?"
+            name: "lastName",
+            message: "What is the employee's first name?"
         },
         {
-        type: "list",
-        name: "role",
-        message: "What role do you want to assign to the employee?",
-        //gotta figure out how to read from our sql file
-        choices: ["Sales Lead", "Salesperson", "Lead Engineer", "Software Engineer", "Accountant", "Legal Team Lead", "Lawyer"]
+            type: "list",
+            name: "role",
+            message: "What role do you want to assign to the employee?",
+            //gotta figure out how to read from our sql file
+            choices: ["Sales Lead", "Salesperson", "Lead Engineer", "Software Engineer", "Accountant", "Legal Team Lead", "Lawyer"]
         },
         {
-        name: "manager",
-        message: "Who is the employee's manager? (if none, just press 'enter'.)"
+            name: "manager",
+            message: "Who is the employee's manager? (if none, just press 'enter'.)"
         }
 
     ])
     userPrompt()
 }
 
-const viewDepartments = () => {
-    inquirer.prompt([{
+const viewDepartments = async () => {
+    await inquirer.prompt([{
 
     }])
 
 }
 
-const viewRoles = () => {
-    inquirer.prompt([{
+const viewRoles = async () => {
+    await inquirer.prompt([{
 
     }])
 
 }
 
-const viewEmployees = () => {
-    inquirer.prompt([{
+const viewEmployees = async () => {
+    await inquirer.prompt([{
 
     }])
 
 }
 
-const updateRole = () => {
-    inquirer.prompt([{
+const updateRole = async () => {
+    await inquirer.prompt([{
 
     }])
 
@@ -181,9 +179,42 @@ const updateRole = () => {
 
 // }
 
+async function main() {
+    let terminate = false;
+    while (!terminate) {
+        const prompt = await userPrompt();
+        switch (prompt.choices) {
+            case "Add departments":
+                await addDepartment();
+                break;
+            case "Add roles":
+                const addRole = await getDepartmentNames();
+                await addRoles(addRole);
+                break;
+            case "Add employees":
+                await addEmployees()
+                break;
+            case "View departments":
+                await getDepartmentNames()
+                break;
+            case "View roles":
+                console.log("filler texst");
+                break;
+            case "View employees":
+                await viewEmployees();
+                break;
+            case "Update employee roles":
+                console.log("efwahuio");
+                break;
+            default:
+                console.log("K BYE");
+                terminate = true;
+        }
+    }
+}
 
 connection.connect((err) => {
     if (err) throw (err);
     console.log("Success!")
-    userPrompt()
+    main()
 });
