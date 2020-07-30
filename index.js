@@ -1,8 +1,14 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
-const {
-    createConnection
-} = require("net");
+
+const connection = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    password: "Dmamjm11!",
+    port: 3306,
+    database: "employeeDB"
+});
+
 
 
 function userPrompt() {
@@ -43,15 +49,42 @@ function userPrompt() {
 
     });
 };
+async function obtainDepartmentId (departmentName) {
+    const query = `SELECT * FROM department WHERE department.name = ?`;
+    const args = [departmentName];
+    const rows = await connection.query(query, args);
+    console.log(rows[0].id);
 
+}
 
 const addDepartment = () => {
     inquirer.prompt([{
-        name: "department",
+        name: "name",
         message: "What is the name of the department you want to add?"
-    }])
+    }]).then(({
+        id,
+        name
+    }) => {
+        connection.query("INSERT INTO departments SET ?", {
+            id: id,
+            name: name
+        },
+        (err, result) => {
+            if (err) throw err;
+            console.log(`Added ${name} to company departments`);
+            obtainDepartmentId();
+        }
+        )
+    }
+    )
 }
 const addRoles = () => {
+    connection.query("SELECT name FROM departments", function(err, data, fields) {
+    (err, result) => {
+        if (err) throw err;
+        console.table(result);
+      }
+    })
     inquirer.prompt([
         {
             name: "title",
@@ -66,12 +99,10 @@ const addRoles = () => {
             type: "list",
             name: "department",
             message: "What department do you want to add your role to?",
-            //gotta figure out how to read from our sql file
-            choices: [""]
+            choices: ["1", "2", "3"]
         }
 
     ])
-
 }
 
 const addEmployees = () => {
@@ -150,4 +181,9 @@ const updateRole = () => {
 
 // }
 
-userPrompt()
+
+connection.connect((err) => {
+    if (err) throw (err);
+    console.log("Success!")
+    userPrompt()
+});
