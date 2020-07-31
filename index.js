@@ -49,7 +49,6 @@ function getDepartmentId(department) {
 function getDepartmentNames() {
     return new Promise((resolve, reject) => {
         let departments = [];
-        let ids = [];
         connection.query("SELECT name FROM departments", (err, data) => {
             if (err) reject(err);
             for (const department of data) {
@@ -98,21 +97,120 @@ async function storeRoles(title, salary, department){
         });
 
 }
-// async function storeRoles(title, salary, department) {
-//     const departmentId = await getDepartmentId(department);
-//     console.log(departmentId)
-//     const arg1 = title;
-//     const arg2 = salary;
-//     connection.query("INSERT INTO roles SET (title, salary, department_id)", {
-//         title: arg1,
-//         salary: arg2,
-//         department_id: departmentId
-//     },
-//     (err, result) => {
-//         if (err) throw err;
-//         console.log(`Added ${arg1} to company roles.`);
-//     }
-// }
+
+function getRoleId(role) {
+    return new Promise((resolve, reject) => {
+        connection.query(`SELECT id FROM roles WHERE roles.title = '${role}'`, (err, data) => {
+            if (err) reject(err);
+            return resolve(data)
+        })
+
+    })
+}
+function getRoleNames() {
+    return new Promise((resolve, reject) => {
+        let roles = [];
+        connection.query("SELECT title FROM roles", (err, data) => {
+            if (err) reject(err);
+            for (const role of data) {
+                roles.push(role.title)
+            }
+            console.log(roles);
+            return resolve(roles)
+        })
+
+    })
+}
+
+async function addEmployees() {
+    const roles = await getRoleNames()
+    const names = await getEmployeeNames();
+    return inquirer.prompt([
+        {
+            name: "firstName",
+            message: "What the employee's first name??"
+
+        },
+        {
+            name: "lastName",
+            message: "What the employee's last name??"
+
+        },
+        {
+            type: "list",
+            name: "role",
+            message: "What role do you want to assign to the employee?",
+            choices: [...roles]
+        },
+        {
+            type: "list",
+            name: "manager",
+            message: "Who is the manager that you want to assign to the employee?",
+            choices: [...names, "No manager"]
+        }
+    ]).then(({
+        firstName,
+        lastName,
+        role,
+        manager
+    }) => {
+        storeEmployee(firstName, lastName, role, manager);
+    })
+}
+async function storeEmployee(firstName, lastName, role){
+    const arg1 = firstName;
+    const arg2 = lastName;
+    const arg3 = await getRoleId(role);
+    const arg4 = await getEmployeeId(manager)
+    await connection.query(`INSERT INTO employees (first_name, last_name, role_id manager_id)
+     VALUES ('${arg1}', ${arg2}, ${departmentId[0].id})`, (err, data) => {
+        if (err) throw err;
+        console.log("Success!")
+    });
+
+}
+
+function getEmployeeNames() {
+    return new Promise((resolve, reject) => {
+        let names = [];
+        connection.query("SELECT first_name, last_name FROM employees", (err, data) => {
+            if (err) reject(err);
+            for (const name of data) {
+                names.push(name.first_name + " " + name.last_name)
+            }
+            console.log(names);
+            return resolve(names)
+        })
+
+    })
+}
+function getEmployeeFirstName() {
+    return new Promise((resolve, reject) => {
+        let fNames = [];
+        connection.query("SELECT first_name FROM employees", (err, data) => {
+            if (err) reject(err);
+            for (const name of data) {
+                fNames.push(name.first_name)
+            }
+            return resolve(fNames)
+        })
+        
+    })
+}
+function getManagerId(manager) {
+    return new Promise((resolve, reject) => {
+        connection.query(`SELECT id FROM employees WHERE employees.`, (err, data) => {
+            if (err) reject(err);
+            for (const name of data) {
+                names.push(name.first_name + " " + name.last_name)
+            }
+            console.log(names);
+            return resolve(names)
+        })
+
+    })
+}
+
 function userPrompt() {
     return inquirer.prompt({
         type: "list",
@@ -139,16 +237,16 @@ function userPrompt() {
                 addRoles()
                 break;
             case "Add employees":
-                console.log("3")
+                addEmployees();
                 break;
             case "View departments":
                 getDepartmentNames()
                 break;
             case "View roles":
-                console.table()
+                getRoleNames();
                 break;
             case "View employees":
-                console.log("6")
+                getEmployeeNames()
                 break;
             case "Update employee roles":
                 console.log("7")
