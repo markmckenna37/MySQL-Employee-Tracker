@@ -33,14 +33,15 @@ addDepartment = () => {
     })
 }
 
-function getDepartmentId(departmentName) {
+function getDepartmentId(department) {
     return new Promise((resolve, reject) => {
-        let id
-        const arg = [departmentName]
-        connection.query("SELECT id FROM employee WHERE orderNumber = '$orderNumber'", (err, data) => {
+        let id;
+        const arg = [department]
+        connection.query(`SELECT id FROM departments WHERE departments.name = '${arg}'`, (err, data) => {
             if (err) reject(err)
+            id = data.id;
+            return resolve(data)
         })
-        return resolve(data)
     })
 
 }
@@ -54,8 +55,6 @@ function getDepartmentNames() {
             for (const department of data) {
                 departments.push(department.name)
             }
-
-            console.log(data)
             return resolve(data)
         })
 
@@ -79,17 +78,26 @@ async function addRoles() {
             message: "What department do you want to add your role to?",
             choices: [...departments]
         }
-    ]).then(() => {
-        // let departmentId;
-        // for (const value of departments) {
-        //     if (value.name === department) {
-        //         departmentId = value.id;
-        //     }
-        // }
-        console.log("Success!")
+    ]).then(({
+        title,
+        salary,
+        department
+    }) => {
+        storeRoles(title, salary, department)
     })
 }
 
+async function storeRoles(title, salary, department){
+        const departmentId = await getDepartmentId(department);
+        const arg1 = title;
+        const arg2 = salary;
+        await connection.query(`INSERT INTO roles (title, salary, department_id)
+         VALUES ('${arg1}', ${arg2}, ${departmentId[0].id})`, (err, data) => {
+            if (err) throw err;
+            console.log("Success!")
+        });
+
+}
 // async function storeRoles(title, salary, department) {
 //     const departmentId = await getDepartmentId(department);
 //     console.log(departmentId)
