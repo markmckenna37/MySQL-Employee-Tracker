@@ -59,6 +59,16 @@ function getDepartmentNames() {
 
     })
 }
+function getDepartmentTable() {
+    return new Promise((resolve, reject) => {
+        connection.query("SELECT * FROM departments", (err, data) => {
+            if (err) reject(err);
+            console.log(data)
+            return resolve(data)
+        })
+
+    })
+}
 
 async function addRoles() {
     const departments = await getDepartmentNames()
@@ -162,8 +172,8 @@ async function storeEmployee(firstName, lastName, role, manager){
     const arg3 = await getRoleId(role);
     const arg4 = await getManagerId(manager)
     console.log(arg4);
-    await connection.query(`INSERT INTO employees (first_name, last_name, role_id manager_id)
-     VALUES ('${arg1}', ${arg2}, ${arg3[0].id}, ${arg4[0].id})`, (err, data) => {
+    await connection.query(`INSERT INTO employees (first_name, last_name, role_id, manager_id)
+     VALUES ('${arg1}', '${arg2}', ${arg3[0].id}, ${arg4[0].id})`, (err, data) => {
         if (err) throw err;
         console.log("Success!")
     });
@@ -178,7 +188,6 @@ function getEmployeeNames() {
             for (const name of data) {
                 names.push(name.first_name + " " + name.last_name)
             }
-            console.log(names);
             return resolve(names)
         })
 
@@ -186,12 +195,10 @@ function getEmployeeNames() {
 }
 
 function getManagerId(manager) {
-    console.log(manager)
-    manager.split(" ")
-    console.log(manager)
+   const managerId = manager.split(" ")
     return new Promise((resolve, reject) => {
-        connection.query(`SELECT id FROM employees WHERE employees.first_name, employees.last_name = '${manager}'`, (err, data) => {
-            if (err) reject(err);;
+        connection.query(`SELECT id FROM employees WHERE employees.last_name = '${managerId[1]}'`, (err, data) => {
+            if (err) reject(err);
             return resolve(data)
         })
 
@@ -227,7 +234,7 @@ function userPrompt() {
                 addEmployees();
                 break;
             case "View departments":
-                getDepartmentNames()
+                console.table(getDepartmentTable());
                 break;
             case "View roles":
                 getRoleNames();
