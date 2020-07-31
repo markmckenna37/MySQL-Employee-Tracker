@@ -115,7 +115,6 @@ function getRoleNames() {
             for (const role of data) {
                 roles.push(role.title)
             }
-            console.log(roles);
             return resolve(roles)
         })
 
@@ -157,13 +156,14 @@ async function addEmployees() {
         storeEmployee(firstName, lastName, role, manager);
     })
 }
-async function storeEmployee(firstName, lastName, role){
+async function storeEmployee(firstName, lastName, role, manager){
     const arg1 = firstName;
     const arg2 = lastName;
     const arg3 = await getRoleId(role);
-    const arg4 = await getEmployeeId(manager)
+    const arg4 = await getManagerId(manager)
+    console.log(arg4);
     await connection.query(`INSERT INTO employees (first_name, last_name, role_id manager_id)
-     VALUES ('${arg1}', ${arg2}, ${departmentId[0].id})`, (err, data) => {
+     VALUES ('${arg1}', ${arg2}, ${arg3[0].id}, ${arg4[0].id})`, (err, data) => {
         if (err) throw err;
         console.log("Success!")
     });
@@ -184,28 +184,15 @@ function getEmployeeNames() {
 
     })
 }
-function getEmployeeFirstName() {
-    return new Promise((resolve, reject) => {
-        let fNames = [];
-        connection.query("SELECT first_name FROM employees", (err, data) => {
-            if (err) reject(err);
-            for (const name of data) {
-                fNames.push(name.first_name)
-            }
-            return resolve(fNames)
-        })
-        
-    })
-}
+
 function getManagerId(manager) {
+    console.log(manager)
+    manager.split(" ")
+    console.log(manager)
     return new Promise((resolve, reject) => {
-        connection.query(`SELECT id FROM employees WHERE employees.`, (err, data) => {
-            if (err) reject(err);
-            for (const name of data) {
-                names.push(name.first_name + " " + name.last_name)
-            }
-            console.log(names);
-            return resolve(names)
+        connection.query(`SELECT id FROM employees WHERE employees.first_name, employees.last_name = '${manager}'`, (err, data) => {
+            if (err) reject(err);;
+            return resolve(data)
         })
 
     })
