@@ -59,17 +59,36 @@ function getDepartmentNames() {
 
     })
 }
-function getDepartmentTable() {
-    return new Promise((resolve, reject) => {
-        connection.query("SELECT * FROM departments", (err, data) => {
-            if (err) reject(err);
-            console.log(data)
-            return resolve(data)
-        })
-
-    })
+async function getDepartmentTable() {
+    const Departments = await getDepartmentNames();
+    console.log(table)
+    let tableArr = []
+    let idArr = []
+    for (let i = 0; i < table.length; i++) {
+        tableArr.push(table[i].name)
+        idArr.push(i)
+    }
+    console.table([Departments])
+    userPrompt();
 }
 
+async function getEmployeeTable() {
+    const query = `SELECT employees.id AS 'ID',
+    first_name AS 'First Name',
+    last_name AS 'Last Name',
+    roles.title AS 'Title',
+    departments.name AS 'Department',
+    roles.salary AS 'Salary',
+    manager_id AS 'Manager ID'
+    FROM employees, roles, departments
+    WHERE employees.role_id = roles.id
+    AND roles.department_id = departments.id
+    ORDER BY employees.id ASC`;
+    const table = await connection.query(query, (err, data) => {
+        if (err) throw (err);
+        console.table(data)
+    })
+}
 async function addRoles() {
     const departments = await getDepartmentNames()
     return inquirer.prompt([{
@@ -103,7 +122,8 @@ async function storeRoles(title, salary, department){
         await connection.query(`INSERT INTO roles (title, salary, department_id)
          VALUES ('${arg1}', ${arg2}, ${departmentId[0].id})`, (err, data) => {
             if (err) throw err;
-            console.log("Success!")
+            console.log(`Successfully added ${arg1} to company roles.`)
+            userPrompt()
         });
 
 }
@@ -129,6 +149,9 @@ function getRoleNames() {
         })
 
     })
+}
+async function getRoleTable() {
+    
 }
 
 async function addEmployees() {
@@ -175,7 +198,8 @@ async function storeEmployee(firstName, lastName, role, manager){
     await connection.query(`INSERT INTO employees (first_name, last_name, role_id, manager_id)
      VALUES ('${arg1}', '${arg2}', ${arg3[0].id}, ${arg4[0].id})`, (err, data) => {
         if (err) throw err;
-        console.log("Success!")
+        console.log(`Successfully added ${arg1} ${arg2} to employee database.`);
+        userPrompt();
     });
 
 }
@@ -234,13 +258,13 @@ function userPrompt() {
                 addEmployees();
                 break;
             case "View departments":
-                console.table(getDepartmentTable());
+              getDepartmentTable()
                 break;
             case "View roles":
                 getRoleNames();
                 break;
             case "View employees":
-                getEmployeeNames()
+                getEmployeeTable();
                 break;
             case "Update employee roles":
                 console.log("7")
